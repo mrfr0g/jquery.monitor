@@ -1,3 +1,5 @@
+// jQuery.monitor.js -- v0.1
+
 (function ($) {
     // Find the supported observer, hopefully not namespaced but you never know
 	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
