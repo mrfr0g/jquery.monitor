@@ -5,11 +5,37 @@ describe('$.monitor', function () {
 		 $scratch = $('<div></div>');
 	});
 
-	describe('width', function () {
+	describe('initialization', function () {
+		it('should require that styles are passed', function (done) {
+			try {
+				$scratch.monitor();
+			} catch (e) {
+				if(e) {
+					done();
+				}
+			}
+		});
+	});
+
+	describe('jQuery support', function () {
+		it('should exist as a callable method on jQuery', function () {
+			expect($scratch.monitor).to.be.a('function');
+		});
+
+		it('should be chainable', function () {
+			$scratch.width(1);
+
+			var width = $scratch.monitor(['width']).width();
+
+			expect(width).to.equal(1);
+		});
+	});
+
+	describe('dimensions', function () {
 		it('should capture width changes', function (done) {
-			$scratch.monitor(function (dimensions) {
-				expect(dimensions).to.have.property('width');
-				expect(dimensions.width).to.equal(100);
+			$scratch.monitor(['width'], function (styles) {
+				expect(styles).to.have.property('width');
+				expect(styles.width).to.equal("100px");
 				done();
 			});
 
@@ -17,9 +43,9 @@ describe('$.monitor', function () {
 		});
 
 		it('should capture height changes', function (done) {
-			$scratch.monitor(function (dimensions) {
-				expect(dimensions).to.have.property('height');
-				expect(dimensions.height).to.equal(100);
+			$scratch.monitor(['height'], function (styles) {
+				expect(styles).to.have.property('height');
+				expect(styles.height).to.equal("100px");
 				done();
 			});
 
@@ -32,7 +58,7 @@ describe('$.monitor', function () {
 				width: 100
 			});
 
-			$scratch.monitor(function (dimensions) {
+			$scratch.monitor(['width', 'height'], function (styles) {
 				done(new Error('Monitor triggered when not expected'));
 			});
 
@@ -43,5 +69,18 @@ describe('$.monitor', function () {
 
 			setTimeout(done, 10); // Allow a moment to fire the event
 		});
+	});
+
+	describe('color', function () {
+		it('should capture color changes', function () {
+			$scratch.monitor(['color'], function (styles) {
+				expect(styles).to.have.property('color');
+				expect(styles.color).to.equal('green');
+			});
+
+			$scratch.css({
+				color: 'green'
+			})
+		})
 	});
 })

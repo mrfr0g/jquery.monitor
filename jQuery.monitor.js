@@ -1,37 +1,62 @@
 (function ($) {
-
+    // Find the supported observer, hopefully not namespaced but you never know
 	var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
 
+    /**
+     * Detects if DOMAttrModified is supported 
+     * @return {Boolean}
+     */
 	var isDOMAttrModifiedSupported = function () {
-        var p = document.createElement('p');
-        var flag = false;
+        var el = document.createElement('p'),
+            supported = false;
 
-        if (p.addEventListener) p.addEventListener('DOMAttrModified', function() {
-            flag = true
-        }, false);
-        else if (p.attachEvent) p.attachEvent('onDOMAttrModified', function() {
-            flag = true
-        });
-        else return false;
+        var respondToModified = function () {
+            supported = true;
+        };
 
-        p.setAttribute('id', 'target');
+        if(el.addEventListener) {
+            el.addEventListener('DOMAttrModified', respondToModified);
+        }
+        else if(el.attachEvent) {
+            el.attachEvent('onDOMAttrModified', respondToModified);
+        }
 
-        return flag;
+        el.setAttribute('id', 'test-id');
+
+        return supported;
     };
 
+    /**
+     * Detects if the monitored styles are different than the cached, and updates the cache if they are
+     * @param {Element} node
+     * @return {Boolean}
+     */
     var changeDetected = function (node) {
     	var $node = $(node),
-    		size = node.__dimensions__,
-    		width = $node.width(),
-    		height = $node.height();
+            monitor = node.__monitor,
+            cache = monitor.cache;
 
-    	if(size.width != width || size.height != height) {
-    		storeDimensions(node);
-    		return true;
-    	}
+        var currentStyles = $node.css(monitor.styles),
+            hasUpdates;
+
+        $.each(cache, function (style, cachedValue) {
+            if(cachedValue !== currentStyles[style]) {
+                hasUpdates = true;
+            }
+        });
+
+        if(hasUpdates) {
+            cacheStyles(node, monitor.styles);
+            return true;
+        }
     }
 
-    var attachListener = function (node, callback) {
+    /**
+     * Attaches the best available observer to the node, when a change is detected the `callback` is called
+     * @param {Element} node
+     * @param {Function} callback
+     */
+    var attachObserver = function (node, callback) {
         if (MutationObserver) {
             var options = {
                 subtree: false,
@@ -41,20 +66,24 @@
             var observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(e) {
                 	if(e.attributeName == 'style' && changeDetected(node)) {
-                		callback.call(node, node.__dimensions__);
+                		callback.call(node, node.__monitor.cache);
                 	}
                 });
             });
 
             observer.observe(node, options);
 
-        } else if (isDOMAttrModifiedSupported()) {
+        }
+        // DOMAttrModified fallback
+        else if (isDOMAttrModifiedSupported()) {
             node.on('DOMAttrModified', function(e) {
             	if(e.attrName == 'style') {
             		callback.call(node, node.__dimensions__);
             	}
             });
-        } else if ('onpropertychange' in document.body) {
+        }
+        // propertychange fallback for older IEs
+        else if ('onpropertychange' in document.body) {
             node.on('propertychange', function(e) {
             	if(window.event.propertyName == 'style') {
             		callback.call(node, node.__dimensions__);
@@ -63,20 +92,37 @@
         }
     }
 
-    var storeDimensions = function (node) {
+    /**
+     * Caches the passed styles array on the node
+     * @param {Element} node
+     * @param {Array} styles
+     */
+    var cacheStyles = function (node, styles) {
 		var $node = $(node);
 
-		node.__dimensions__ = {
-			width: $node.width(),
-			height: $node.height()
-		};
+		node.__monitor = {
+            cache : $node.css(styles),
+            styles: styles
+        };
     }
 
-	$.fn.monitor = function (callback) {
+    /**
+     * The jQuery hook, loops over the selected elements, attaches the best possible observer, and caches the current styles for later comparison
+     * @param {Array} styles
+     * @param {Function} callback
+     */
+	$.fn.monitor = function (styles, callback) {
+        if(!styles) {
+            throw new Error("styles to be monitored are missing");
+            return;
+        }
+
 		this.each(function (i, node) {
-			storeDimensions(node);			
-			attachListener(node, callback);
+			cacheStyles(node, styles);
+			attachObserver(node, callback);
 		});
+
+        return this;
 	};
 
 })(jQuery);
