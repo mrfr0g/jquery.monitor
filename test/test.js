@@ -2,7 +2,8 @@ describe('$.monitor', function () {
 	var $scatch;
 
 	beforeEach(function () {
-		 $scratch = $('<div></div>');
+		$('#scratch').remove();
+		$scratch = $('<div id="scratch"></div>').appendTo('body');
 	});
 
 	describe('initialization', function () {
@@ -53,29 +54,34 @@ describe('$.monitor', function () {
 		});
 
 		it('shouldnt fire when the dimensions are the same', function (done) {
-			$scratch.css({
-				height: 100,
-				width: 100
-			});
+			var scratch = $scratch[0];
+
+			scratch.cssText = "width: 100px;height: 100px;";
 
 			$scratch.monitor(['width', 'height'], function (styles) {
 				done(new Error('Monitor triggered when not expected'));
 			});
 
-			$scratch.css({
-				height: 100,
-				width: 100
-			});
+			scratch.cssText = "width: 100px;height: 100px;";
 
 			setTimeout(done, 10); // Allow a moment to fire the event
 		});
 	});
 
 	describe('color', function () {
-		it('should capture color changes', function () {
+		it('should capture color changes', function (done) {
 			$scratch.monitor(['color'], function (styles) {
 				expect(styles).to.have.property('color');
-				expect(styles.color).to.equal('green');
+
+				// Might return rgb format
+				if(styles.color.indexOf('rgb') != -1) {
+					expect(styles.color).to.equal('rgb(0, 128, 0)');
+				} 
+				else {
+					expect(styles.color).to.equal('green');
+				}
+
+				done();
 			});
 
 			$scratch.css({
