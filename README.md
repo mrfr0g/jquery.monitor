@@ -1,4 +1,4 @@
-jQuery.monitor
+jQuery.monitor v0.2
 ==============
 
 A jQuery plugin which allows you to monitor style changes on elements.
