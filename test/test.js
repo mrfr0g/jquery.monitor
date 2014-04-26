@@ -2,7 +2,8 @@ describe('$.monitor', function () {
 	var $scatch;
 
 	beforeEach(function () {
-		 $scratch = $('<div></div>');
+		$('#scratch').remove();
+		$scratch = $('<div id="scratch"></div>').appendTo('body');
 	});
 
 	describe('initialization', function () {
@@ -72,10 +73,19 @@ describe('$.monitor', function () {
 	});
 
 	describe('color', function () {
-		it('should capture color changes', function () {
+		it('should capture color changes', function (done) {
 			$scratch.monitor(['color'], function (styles) {
 				expect(styles).to.have.property('color');
-				expect(styles.color).to.equal('green');
+
+				// Might return rgb format
+				if(styles.color.indexOf('rgb') != -1) {
+					expect(styles.color).to.equal('rgb(0, 128, 0)');
+				} 
+				else {
+					expect(styles.color).to.equal('green');
+				}
+
+				done();
 			});
 
 			$scratch.css({
