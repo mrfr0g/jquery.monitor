@@ -59,8 +59,10 @@
 	var attachObserver = function (node, callback) {
 
 		var eventIsStyleChange = function (e) {
-			var attributeName = e.attributeName || e.attrName || (window.event && window.event.propertyName);
-			return attributeName.indexOf('style') != -1;
+			var originalEvent = e.originalEvent,
+				attributeName = e.attributeName || originalEvent && originalEvent.attrName || originalEvent && originalEvent.propertyName;
+				
+			return attributeName && attributeName.indexOf('style') != -1;
 		}
 
 		var respondToStyleChange = function (e) {
