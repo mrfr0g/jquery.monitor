@@ -54,13 +54,15 @@ describe('$.monitor', function () {
 		});
 
 		it('shouldnt fire when the dimensions are the same', function (done) {
-			$scratch.get(0).style = "width: 100px;height: 100px;";
+			var scratch = $scratch[0];
+
+			scratch.cssText = "width: 100px;height: 100px;";
 
 			$scratch.monitor(['width', 'height'], function (styles) {
 				done(new Error('Monitor triggered when not expected'));
 			});
 
-			$scratch.get(0).style = "width: 100px;height: 100px;";
+			scratch.cssText = "width: 100px;height: 100px;";
 
 			setTimeout(done, 10); // Allow a moment to fire the event
 		});
